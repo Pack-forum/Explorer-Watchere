@@ -13,17 +13,32 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Fix PtInRect
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          f = Path("ExplorerWatcher/src/main.cpp")
+          s = f.read_text()
+
+          s, count = re.subn(
+              r'(PtInRect\s*\([^,\n]+,\s*)&\s*p(\s*\))',
+              r'\1p\2',
+              s
+          )
+
+          f.write_text(s)
+          print(f"Fixed {count} PtInRect calls")
+          PY
+
       - name: Compile
         run: |
-          arm-mingw32ce-g++ \
-            -Os \
-            -s \
-            -DUNICODE \
-            -D_UNICODE \
+          arm-mingw32ce-g++ -Os -s \
+            -DUNICODE -D_UNICODE \
             ExplorerWatcher/src/main.cpp \
             -o ExplorerWatcher.exe \
-            -lgdi32 \
-            -luser32
+            -lgdi32 -luser32
 
       - name: Upload EXE
         uses: actions/upload-artifact@v4
