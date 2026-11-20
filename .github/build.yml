@@ -1,14 +1,42 @@
-name: Build ExplorerWatcher
+
+name: Build ExplorerWatcher for Windows CE ARM
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
 
 jobs:
   build:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
+    runs-on: ubuntu-latest
 
-      - name: Show source files
-        run: Get-ChildItem -Recurse
-        shell: pwsh
+    container:
+      image: ghcr.io/enlyze/windows-ce-build-environment-arm
+
+    steps:
+      - name: Download source
+        uses: actions/checkout@v4
+
+      - name: Check compiler
+        run: arm-mingw32ce-g++ --version
+
+      - name: Compile Windows CE launcher
+        run: |
+          arm-mingw32ce-g++ \
+            -Os \
+            -s \
+            -DUNICODE \
+            -D_UNICODE \
+            -DUNDER_CE \
+            -D_ARMV4I_ \
+            -mwindows \
+            src/main.cpp \
+            -o ExplorerWatcher.exe \
+            -lgdi32 \
+            -luser32
+
+      - name: Upload EXE
+        uses: actions/upload-artifact@v4
+        with:
+          name: ExplorerWatcher-WinCE-ARM
+          path: ExplorerWatcher.exe
