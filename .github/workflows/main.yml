@@ -15,16 +15,13 @@ jobs:
       - name: Check project
         shell: pwsh
         run: |
-          if (!(Test-Path "src/main.cpp")) {
-            throw "src/main.cpp bulunamadi"
+          if (!(Test-Path "ExplorerWatcher/src/main.cpp")) {
+            throw "main.cpp bulunamadi"
           }
-          Write-Host "ExplorerWatcher source found"
+          Write-Host "ExplorerWatcher source found!"
 
-      - name: Save source
+      - name: Upload source
         uses: actions/upload-artifact@v4
         with:
           name: ExplorerWatcher-Source
-          path: |
-            src/main.cpp
-            README.txt
-            preview.html
+          path: ExplorerWatcher/
