@@ -1,5 +1,5 @@
 
-name: ExplorerWatcher Windows CE Build
+name: ExplorerWatcher CE Diagnostic Build
 
 on:
   workflow_dispatch:
@@ -7,70 +7,55 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     container:
       image: ghcr.io/enlyze/windows-ce-build-environment-arm
 
     steps:
-      - name: Checkout source
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Check source and compiler
+      - name: Check compiler and libraries
         shell: bash
         run: |
           set -eu
 
-          echo "Checking source..."
-          test -f ExplorerWatcher/src/main.cpp
-
-          echo "Checking compiler..."
-          command -v arm-mingw32ce-g++
-
-          echo "Compiler version:"
+          echo "=== COMPILER ==="
           arm-mingw32ce-g++ --version
 
-          echo "Checking Windows CE libraries..."
-          find /opt/cegcc-arm -type f \
-            \( -iname '*coredll*' -o -iname '*aygshell*' \) \
-            2>/dev/null || true
+          echo "=== LIBRARY FILES ==="
+          find /opt/cegcc-arm/arm-mingw32ce/lib \
+            -maxdepth 1 -type f | sort
 
-      - name: Fix Windows CE source
+          echo "=== REQUIRED SYMBOLS ==="
+          find /opt/cegcc-arm -type f \
+            \( -name '*.a' -o -name '*.dll' \) \
+            -exec sh -c '
+              for f do
+                arm-mingw32ce-nm -A "$f" 2>/dev/null |
+                  grep -E "CreateFontW|SetStretchBltMode" || true
+              done
+            ' sh {} +
+
+      - name: Fix source
         shell: bash
         run: |
-          set -eu
-
           sed -i 's/PtInRect(\([^,]*\), *&p)/PtInRect(\1, p)/g' \
             ExplorerWatcher/src/main.cpp
 
-          echo "Remaining pointer-style PtInRect calls:"
-          if grep -nE 'PtInRect\([^,]+,[[:space:]]*&p\)' ExplorerWatcher/src/main.cpp; then
-            echo "ERROR: PtInRect fix incomplete"
-            exit 1
-          fi
-
-      - name: Compile and link
+      - name: Compile test
         shell: bash
         run: |
-          set -eu
-
           arm-mingw32ce-g++ \
-            -Os \
-            -s \
-            -DUNICODE \
-            -D_UNICODE \
+            -Os -DUNICODE -D_UNICODE \
             -D_WIN32_WCE=0x500 \
-            ExplorerWatcher/src/main.cpp \
-            -o ExplorerWatcher.exe \
-            -lcoredll
+            -c ExplorerWatcher/src/main.cpp \
+            -o main.o
 
-          test -s ExplorerWatcher.exe
+          echo "Source compilation successful."
 
-          echo "EXE successfully created:"
-          ls -lh ExplorerWatcher.exe
-
-      - name: Upload executable
+      - name: Upload diagnostic files
         uses: actions/upload-artifact@v4
         with:
-          name: ExplorerWatcher-WindowsCE-ARM
-          path: ExplorerWatcher.exe
+          name: ExplorerWatcher-Diagnostics
+          path: main.o
           if-no-files-found: error
