@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Explorer Watcher – Preview</title>
+<style>
+:root{--bg:#0e141b;--panel:#17212c;--panel2:#1f2c3a;--ink:#e9eef3;--mute:#8497a8;--hero:#f2a33a;--heroink:#1a1204;--teal:#35c2b3;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#05080b;font-family:"Segoe UI",system-ui,sans-serif;color:var(--ink)}
+body{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:env(safe-area-inset-top,0) 8px env(safe-area-inset-bottom,0)}
+.note{font-size:13px;color:var(--mute);text-align:center}
+.wrap{width:min(100%,800px);aspect-ratio:800/480;container-type:inline-size}
+.screen{width:100%;height:100%;border-radius:6px;overflow:hidden;position:relative;background:var(--wp)}
+.view{position:absolute;inset:0;display:none}
+.view.on{display:grid}
+button{font:inherit;color:inherit;border:0;cursor:pointer}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:2cqw;padding:0 2cqw 0 3cqw;background:#0e141b;font-size:2.8cqw}
+.bar b{font-weight:600}.bar span{color:var(--mute)}
+.bar button{background:var(--panel);border-radius:1cqw;padding:.8cqw 2.4cqw;font-size:2.5cqw}
+.bar .r{display:flex;align-items:center;gap:2cqw}
+#home,#set,#wall{grid-template-rows:10% 1fr}
+#set,#wall{background:var(--bg)}
+.grid{display:grid;grid-template-columns:1.25fr repeat(4,1fr);grid-template-rows:1fr 1fr;gap:1.4cqw;padding:1.6cqw 2cqw 2cqw}
+.t{background:var(--panel);border-radius:1.2cqw;display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;padding:1.6cqw;text-align:left;min-width:0;overflow:hidden}
+.t:active,.t.sel{background:var(--panel2);outline:.4cqw solid var(--teal);outline-offset:-.4cqw}
+svg.i{width:6cqw;height:6cqw;flex:none;stroke:var(--teal);fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.t strong{display:block;font-size:2.5cqw;font-weight:600;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hero{grid-row:span 2;background:var(--hero);color:var(--heroink)}
+.hero svg.i{width:12cqw;height:12cqw;stroke:var(--heroink)}
+.hero strong{font-size:5.4cqw}
+.hero small{display:block;font-size:2.2cqw;color:#4a3510;margin-top:.6cqw}
+#lock{place-content:center;text-align:center;background:#0006;cursor:pointer}
+#lock .time{font-size:19cqw;font-weight:300;line-height:1;text-shadow:0 .4cqw 2cqw #0008}
+#lock .date{font-size:3.4cqw;margin-top:1.4cqw;text-shadow:0 .2cqw 1cqw #0008}
+#lock .hint{position:absolute;left:50%;bottom:5cqw;transform:translateX(-50%);padding:1.2cqw 3cqw;border-radius:5cqw;background:#000a;font-size:2.4cqw;white-space:nowrap}
+.rows{display:flex;flex-direction:column;gap:1.4cqw;padding:2cqw}
+.row{display:flex;align-items:center;gap:2.4cqw;background:var(--panel);border-radius:1.2cqw;padding:0 2.4cqw;height:12.5cqw;text-align:left}
+.row:active{background:var(--panel2)}
+.row div{flex:1;min-width:0}.row strong{display:block;font-size:3cqw;font-weight:600}.row small{color:var(--mute);font-size:2.1cqw}
+.row em{font-style:normal;color:var(--mute);font-size:4cqw}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:1fr 1fr;gap:1.6cqw;padding:2cqw}
+.c{border-radius:1.2cqw;display:flex;align-items:flex-end;padding:1.4cqw;font-size:2.4cqw;font-weight:600;text-shadow:0 .2cqw .8cqw #000a;text-align:left}
+.c.sel{outline:.5cqw solid var(--teal);outline-offset:.2cqw}
+.c.file{background:var(--panel);color:var(--mute);font-weight:400;text-shadow:none}
+#photo{grid-template-rows:10% 1fr 12.5%;background:#000}
+#pic{display:flex;align-items:center;justify-content:center;font-size:3cqw;text-shadow:0 .2cqw 1cqw #0009;margin:0 auto;width:100%;height:100%}
+.pb{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:1.6cqw;padding:1cqw 2cqw;background:var(--bg)}
+.pb button{background:var(--panel);border-radius:1.2cqw;font-size:2.8cqw}.pb button:active{background:var(--panel2)}
+.toast{position:absolute;left:50%;bottom:2.4cqw;transform:translateX(-50%);background:#000c;padding:1cqw 2.4cqw;border-radius:5cqw;font-size:2.3cqw;opacity:0;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+</style></head><body>
+<div class="wrap"><div class="screen" id="scr">
+  <div class="view on" id="lock"><div><div class="time" id="lt">21:40</div><div class="date" id="ld"></div></div><div class="hint">Touch the screen to unlock</div></div>
+  <div class="view" id="home"><div class="bar"><b>Explorer Watcher</b><div class="r"><span id="clk">21:40</span><button id="lk">Lock</button></div></div><div class="grid" id="g"></div></div>
+  <div class="view" id="set"><div class="bar"><button data-go="home">‹ Back</button><b>Settings</b><span></span></div><div class="rows" id="rows"></div></div>
+  <div class="view" id="wall"><div class="bar"><button data-go="set">‹ Back</button><b>Wallpaper</b><span>Pictures: \EW\Wallpapers</span></div><div class="cards" id="cards"></div></div>
+  <div class="view" id="photo"><div class="bar"><button data-go="home">‹ Back</button><b id="pn">IMG_0001.jpg</b><span id="pc">1 / 6</span></div><div id="pic"></div><div class="pb"><button id="pp">‹ Previous</button><button id="ps">Set as wallpaper</button><button id="pnx">Next ›</button></div></div>
+  <div class="toast" id="to"></div>
+</div></div>
+<div class="note">Preview of the 800×480 screen. Tap to unlock, then try Photos and Settings.</div>
+<script>
+const I={
+tv:'<rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4"/>',
+film:'<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 4v16M16 4v16"/>',
+play:'<circle cx="12" cy="12" r="9"/><path d="M10 8.5l6 3.5-6 3.5z"/>',
+folder:'<path d="M3 6h6l2 3h10v10H3z"/>',
+usb:'<path d="M12 3v14"/><circle cx="12" cy="19.5" r="2.5"/><path d="M12 12L7 9.5M12 9l4-2"/>',
+cc:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M6 11h4M12 11h6M6 15h6M14 15h4"/>',
+car:'<path d="M4 16v-4l2-5h12l2 5v4zM7 16v2M17 16v2"/>',
+photo:'<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 17l6-6 5 5 3-3 4 4"/><circle cx="16.5" cy="8" r="1.5"/>',
+gear:'<circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l3 3M16 16l3 3M19 5l-3 3M5 19l3-3"/>',
+lock:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/>'};
+const ic=k=>`<svg class="i" viewBox="0 0 24 24">${I[k]}</svg>`;
+const TH=[['Midnight','#0e141b','#1e2d46'],['Ocean','#062a3c','#147882'],['Sunset','#3c1432','#dc783c'],['Graphite','#19191c','#464850']];
+const PH=[['IMG_0001.jpg','#2b5876','#4e4376'],['IMG_0002.jpg','#614385','#516395'],['IMG_0003.jpg','#134e5e','#71b280'],['holiday_04.jpg','#c94b4b','#4b134f'],['car_05.jpg','#232526','#414345'],['sunset_06.jpg','#f12711','#f5af19']];
+let theme=0,custom=null,pi=0;const $=id=>document.getElementById(id);
+const g2=t=>`linear-gradient(180deg,${t[0]},${t[1]})`;
+const wp=()=>$('scr').style.setProperty('--wp',custom?g2(custom):g2([TH[theme][1],TH[theme][2]]));
+function show(v){['lock','home','set','wall','photo'].forEach(x=>$(x).classList.toggle('on',x==v))}
+let h;function toast(t){const e=$('to');e.textContent=t;e.classList.add('show');clearTimeout(h);h=setTimeout(()=>e.classList.remove('show'),1500)}
+const T=[['tv','Series','hero','Continue where you stopped'],['film','Movies'],['play','Media Player'],['photo','Photos','photo'],['folder','File Manager'],['usb','USB Mode'],['cc','Subtitles'],['car','Car Apps'],['gear','Settings','set']];
+T.forEach(([i,a,c,s])=>{const e=document.createElement('button');e.className='t'+(c=='hero'?' hero':'');
+e.innerHTML=`${ic(i)}<span><strong>${a}</strong>${c=='hero'?'<small>'+s+'</small>':''}</span>`;
+e.onclick=()=>{if(c=='photo'){showPhoto();show('photo');return}if(c=='set'){show('set');return}
+document.querySelectorAll('.t').forEach(x=>x.classList.remove('sel'));e.classList.add('sel');toast('Opens: '+a)};$('g').appendChild(e)});
+[['photo','Wallpaper','Choose a colour or a picture','wall'],['lock','Lock now','Show the lock screen','lock'],['folder','Photo sources','Found 6 photos on SD / USB','src']].forEach(([i,a,s,go])=>{
+const r=document.createElement('button');r.className='row';r.innerHTML=`${ic(i)}<div><strong>${a}</strong><small>${s}</small></div><em>›</em>`;
+r.onclick=()=>go=='src'?toast('SD and USB cards are found automatically'):show(go);$('rows').appendChild(r)});
+function cards(){$('cards').innerHTML='';TH.forEach((t,i)=>{const d=document.createElement('button');d.className='c'+(!custom&&i==theme?' sel':'');
+d.style.background=g2([t[1],t[2]]);d.textContent=t[0];d.onclick=()=>{theme=i;custom=null;wp();cards();toast('Wallpaper set: '+t[0])};$('cards').appendChild(d)});
+for(let i=0;i<4;i++){const d=document.createElement('div');d.className='c file';d.textContent='your_image'+(i+1)+'.jpg';$('cards').appendChild(d)}}
+function showPhoto(){const p=PH[pi];$('pic').style.background=g2([p[1],p[2]]);$('pic').textContent='';$('pn').textContent=p[0];$('pc').textContent=(pi+1)+' / '+PH.length}
+$('pp').onclick=()=>{pi=(pi+PH.length-1)%PH.length;showPhoto()};$('pnx').onclick=()=>{pi=(pi+1)%PH.length;showPhoto()};
+$('ps').onclick=()=>{custom=[PH[pi][1],PH[pi][2]];wp();cards();toast('Wallpaper set')};
+document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>show(b.dataset.go));
+$('lock').onclick=()=>show('home');$('lk').onclick=()=>show('lock');
+function tick(){const n=new Date();const tm=n.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',hour12:false});
+$('lt').textContent=tm;$('clk').textContent=tm;$('ld').textContent=n.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'})}
+tick();setInterval(tick,10000);wp();cards();showPhoto();
+</script></body></html>
