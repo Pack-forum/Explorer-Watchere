@@ -1,27 +1,27 @@
 
-name: ExplorerWatcher Build
+name: Build ExplorerWatcher EXE
 
 on:
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/enlyze/windows-ce-build-environment-arm
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Check project
-        shell: pwsh
+      - name: Compile
         run: |
-          if (!(Test-Path "ExplorerWatcher/src/main.cpp")) {
-            throw "main.cpp bulunamadi"
-          }
-          Write-Host "ExplorerWatcher source found!"
+          arm-mingw32ce-g++ -Os -s -mwindows \
+            ExplorerWatcher/src/main.cpp \
+            -o ExplorerWatcher.exe \
+            -lgdi32 -luser32
 
-      - name: Upload source
+      - name: Upload EXE
         uses: actions/upload-artifact@v4
         with:
-          name: ExplorerWatcher-Source
-          path: ExplorerWatcher/
+          name: ExplorerWatcher-EXE
+          path: ExplorerWatcher.exe
