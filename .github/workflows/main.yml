@@ -20,7 +20,6 @@ jobs:
           set -eu
           FILE="ExplorerWatcher/src/main.cpp"
 
-          # CreateFont yerine Windows CE uyumlu CreateFontIndirect kullan
           sed -i '/return CreateFont(/c\  LOGFONT lf = {0};\
           lf.lfHeight = -h;\
           lf.lfWeight = w;\
@@ -28,34 +27,31 @@ jobs:
           lstrcpy(lf.lfFaceName, TEXT("Tahoma"));\
           return CreateFontIndirect(&lf);' "$FILE"
 
-          # Windows CE sürümünde desteklenmeyen ayarı kaldır
           sed -i '/SetStretchBltMode[[:space:]]*(/d' "$FILE"
-
-          # PtInRect parametrelerini düzelt
           sed -i 's/PtInRect(\([^,]*\), *&p)/PtInRect(\1, p)/g' "$FILE"
 
-          echo "Compatibility fixes applied."
-
-      - name: Compile and link EXE
+      - name: Compile EXE
         shell: bash
         run: |
           set -eu
 
           arm-mingw32ce-g++ \
-            -Os \
-            -s \
-            -DUNICODE \
-            -D_UNICODE \
+            -Os -s \
+            -DUNICODE -D_UNICODE \
             -D_WIN32_WCE=0x500 \
             ExplorerWatcher/src/main.cpp \
             -o ExplorerWatcher.exe \
             -lcoredll
 
-          test -s ExplorerWatcher.exe
-          file ExplorerWatcher.exe
+          if [ ! -s ExplorerWatcher.exe ]; then
+            echo "ERROR: EXE was not created."
+            exit 1
+          fi
+
+          echo "EXE created successfully."
           ls -lh ExplorerWatcher.exe
 
-      - name: Upload executable
+      - name: Upload EXE
         uses: actions/upload-artifact@v4
         with:
           name: ExplorerWatcher-WindowsCE-ARM
