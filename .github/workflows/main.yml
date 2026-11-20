@@ -1,5 +1,5 @@
 
-name: ExplorerWatcher CE Diagnostic Build
+name: ExplorerWatcher CE Build
 
 on:
   workflow_dispatch:
@@ -14,48 +14,50 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Check compiler and libraries
+      - name: Fix Windows CE compatibility
+        shell: bash
+        run: |
+          set -eu
+          FILE="ExplorerWatcher/src/main.cpp"
+
+          # CreateFont yerine Windows CE uyumlu CreateFontIndirect kullan
+          sed -i '/return CreateFont(/c\  LOGFONT lf = {0};\
+          lf.lfHeight = -h;\
+          lf.lfWeight = w;\
+          lf.lfCharSet = DEFAULT_CHARSET;\
+          lstrcpy(lf.lfFaceName, TEXT("Tahoma"));\
+          return CreateFontIndirect(&lf);' "$FILE"
+
+          # Windows CE sürümünde desteklenmeyen ayarı kaldır
+          sed -i '/SetStretchBltMode[[:space:]]*(/d' "$FILE"
+
+          # PtInRect parametrelerini düzelt
+          sed -i 's/PtInRect(\([^,]*\), *&p)/PtInRect(\1, p)/g' "$FILE"
+
+          echo "Compatibility fixes applied."
+
+      - name: Compile and link EXE
         shell: bash
         run: |
           set -eu
 
-          echo "=== COMPILER ==="
-          arm-mingw32ce-g++ --version
-
-          echo "=== LIBRARY FILES ==="
-          find /opt/cegcc-arm/arm-mingw32ce/lib \
-            -maxdepth 1 -type f | sort
-
-          echo "=== REQUIRED SYMBOLS ==="
-          find /opt/cegcc-arm -type f \
-            \( -name '*.a' -o -name '*.dll' \) \
-            -exec sh -c '
-              for f do
-                arm-mingw32ce-nm -A "$f" 2>/dev/null |
-                  grep -E "CreateFontW|SetStretchBltMode" || true
-              done
-            ' sh {} +
-
-      - name: Fix source
-        shell: bash
-        run: |
-          sed -i 's/PtInRect(\([^,]*\), *&p)/PtInRect(\1, p)/g' \
-            ExplorerWatcher/src/main.cpp
-
-      - name: Compile test
-        shell: bash
-        run: |
           arm-mingw32ce-g++ \
-            -Os -DUNICODE -D_UNICODE \
+            -Os \
+            -s \
+            -DUNICODE \
+            -D_UNICODE \
             -D_WIN32_WCE=0x500 \
-            -c ExplorerWatcher/src/main.cpp \
-            -o main.o
+            ExplorerWatcher/src/main.cpp \
+            -o ExplorerWatcher.exe \
+            -lcoredll
 
-          echo "Source compilation successful."
+          test -s ExplorerWatcher.exe
+          file ExplorerWatcher.exe
+          ls -lh ExplorerWatcher.exe
 
-      - name: Upload diagnostic files
+      - name: Upload executable
         uses: actions/upload-artifact@v4
         with:
-          name: ExplorerWatcher-Diagnostics
-          path: main.o
+          name: ExplorerWatcher-WindowsCE-ARM
+          path: ExplorerWatcher.exe
           if-no-files-found: error
