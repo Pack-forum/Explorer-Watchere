@@ -1,0 +1,30 @@
+
+name: ExplorerWatcher Build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check project
+        shell: pwsh
+        run: |
+          if (!(Test-Path "src/main.cpp")) {
+            throw "src/main.cpp bulunamadi"
+          }
+          Write-Host "ExplorerWatcher source found"
+
+      - name: Save source
+        uses: actions/upload-artifact@v4
+        with:
+          name: ExplorerWatcher-Source
+          path: |
+            src/main.cpp
+            README.txt
+            preview.html
