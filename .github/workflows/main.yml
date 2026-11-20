@@ -1,5 +1,5 @@
 
-name: ExplorerWatcher CE Build
+name: ExplorerWatcher Windows CE Build
 
 on:
   workflow_dispatch:
@@ -12,23 +12,65 @@ jobs:
       image: ghcr.io/enlyze/windows-ce-build-environment-arm
 
     steps:
-      - name: Download source
+      - name: Checkout source
         uses: actions/checkout@v4
 
-      - name: Fix PtInRect
+      - name: Check source and compiler
+        shell: bash
         run: |
-          sed -i 's/PtInRect(\(&[^,]*\), *&p)/PtInRect(\1, p)/g' ExplorerWatcher/src/main.cpp
+          set -eu
 
-      - name: Compile EXE
+          echo "Checking source..."
+          test -f ExplorerWatcher/src/main.cpp
+
+          echo "Checking compiler..."
+          command -v arm-mingw32ce-g++
+
+          echo "Compiler version:"
+          arm-mingw32ce-g++ --version
+
+          echo "Checking Windows CE libraries..."
+          find /opt/cegcc-arm -type f \
+            \( -iname '*coredll*' -o -iname '*aygshell*' \) \
+            2>/dev/null || true
+
+      - name: Fix Windows CE source
+        shell: bash
         run: |
-          arm-mingw32ce-g++ -Os -s \
-            -DUNICODE -D_UNICODE \
+          set -eu
+
+          sed -i 's/PtInRect(\([^,]*\), *&p)/PtInRect(\1, p)/g' \
+            ExplorerWatcher/src/main.cpp
+
+          echo "Remaining pointer-style PtInRect calls:"
+          if grep -nE 'PtInRect\([^,]+,[[:space:]]*&p\)' ExplorerWatcher/src/main.cpp; then
+            echo "ERROR: PtInRect fix incomplete"
+            exit 1
+          fi
+
+      - name: Compile and link
+        shell: bash
+        run: |
+          set -eu
+
+          arm-mingw32ce-g++ \
+            -Os \
+            -s \
+            -DUNICODE \
+            -D_UNICODE \
+            -D_WIN32_WCE=0x500 \
             ExplorerWatcher/src/main.cpp \
             -o ExplorerWatcher.exe \
-            -lgdi32 -luser32
+            -lcoredll
 
-      - name: Upload EXE
+          test -s ExplorerWatcher.exe
+
+          echo "EXE successfully created:"
+          ls -lh ExplorerWatcher.exe
+
+      - name: Upload executable
         uses: actions/upload-artifact@v4
         with:
-          name: ExplorerWatcher-EXE
+          name: ExplorerWatcher-WindowsCE-ARM
           path: ExplorerWatcher.exe
+          if-no-files-found: error
