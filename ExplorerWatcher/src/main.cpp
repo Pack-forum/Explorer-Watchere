@@ -504,8 +504,8 @@ static LRESULT CALLBACK Proc(HWND hw, UINT m, WPARAM w, LPARAM l)
     case S_PHOTO:
       if (PtInRect(&g_back, &p)) { if (g_img) { DeleteObject(g_img); g_img = NULL; } Go(hw, S_HOME); }
       else if (PtInRect(&g_pPrev, &p)) Step(hw, -1);
-      else if (PtInRect(&g_pNext, &p)) Step(hw, 1);
-      else if (PtInRect(&g_pSet, &p) && g_np > 0) Say(hw, SetWallpaper(hw, g_pics[g_pi]) ? TEXT("Wallpaper set") : TEXT("Cannot use this file"));
+      else if (PtInRect(&g_pNext, p)) Step(hw, 1);
+      else if (PtInRect(&g_pSet,  p) && g_np > 0) Say(hw, SetWallpaper(hw, g_pics[g_pi]) ? TEXT("Wallpaper set") : TEXT("Cannot use this file"));
       break;
     }
     return 0;
