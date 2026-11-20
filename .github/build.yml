@@ -1,0 +1,14 @@
+name: Build ExplorerWatcher
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show source files
+        run: Get-ChildItem -Recurse
+        shell: pwsh
