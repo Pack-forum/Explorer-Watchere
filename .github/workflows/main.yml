@@ -7,32 +7,19 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     container:
       image: ghcr.io/enlyze/windows-ce-build-environment-arm
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Download source
+        uses: actions/checkout@v4
 
       - name: Fix PtInRect
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
+          sed -i 's/PtInRect(\(&[^,]*\), *&p)/PtInRect(\1, p)/g' ExplorerWatcher/src/main.cpp
 
-          f = Path("ExplorerWatcher/src/main.cpp")
-          s = f.read_text()
-
-          s, count = re.subn(
-              r'(PtInRect\s*\([^,\n]+,\s*)&\s*p(\s*\))',
-              r'\1p\2',
-              s
-          )
-
-          f.write_text(s)
-          print(f"Fixed {count} PtInRect calls")
-          PY
-
-      - name: Compile
+      - name: Compile EXE
         run: |
           arm-mingw32ce-g++ -Os -s \
             -DUNICODE -D_UNICODE \
