@@ -1,5 +1,5 @@
 
-name: Build ExplorerWatcher EXE
+name: ExplorerWatcher CE Build
 
 on:
   workflow_dispatch:
@@ -15,10 +15,15 @@ jobs:
 
       - name: Compile
         run: |
-          arm-mingw32ce-g++ -Os -s -mwindows \
+          arm-mingw32ce-g++ \
+            -Os \
+            -s \
+            -DUNICODE \
+            -D_UNICODE \
             ExplorerWatcher/src/main.cpp \
             -o ExplorerWatcher.exe \
-            -lgdi32 -luser32
+            -lgdi32 \
+            -luser32
 
       - name: Upload EXE
         uses: actions/upload-artifact@v4
